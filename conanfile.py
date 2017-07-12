@@ -4,7 +4,7 @@ import os
 
 class CpputestConan(ConanFile):
     name = "cpputest"
-    version = "3.5"
+    version = "3.5-1"
     license = "BSD-3"
     url = "https://github.com/geotracsystems/cpputest"
     settings = "os", "compiler", "build_type", "arch"
