@@ -18,6 +18,8 @@ class CpputestConan(ConanFile):
             os.environ["CFLAGS"] = "-m32"
             os.environ["CXXFLAGS"] = "-m32"
             os.environ["LDFLAGS"] = "-m32"
+        os.environ["CFLAGS"] += " -g"
+        os.environ["CXXFLAGS"] += " -g"
         self.run('cmake ./ %s' % (cmake.command_line))
         self.run("cmake --build . %s" % cmake.build_config)
 
