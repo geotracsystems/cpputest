@@ -1,5 +1,6 @@
 from conans import ConanFile, CMake, tools
 import os
+import re
 
 
 class CpputestConan(ConanFile):
@@ -13,17 +14,21 @@ class CpputestConan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
-        install_dir = "-DCMAKE_INSTALL_PREFIX=%s" % self.package_folder
         if self.settings.arch == "x86":
             os.environ["CFLAGS"] = "-m32"
             os.environ["CXXFLAGS"] = "-m32"
             os.environ["LDFLAGS"] = "-m32"
-        self.run('cmake ./ %s %s' % (cmake.command_line, install_dir))
+        self.run('cmake ./ %s' % (cmake.command_line))
         self.run("cmake --build . %s" % cmake.build_config)
-        self.run("make install")
 
-    # Package step is omitted because I'm using make install to copy the
-    # files to the correct location rather than trying to do it manually.
+    def package(self):
+        # NOTE: This will include private headers, at this point it isn't known
+        # if this will cause a problem
+        self.copy("*.h", dst='include/CppUTest', src='include/CppUTest');
+        self.copy("*.h", dst='include/CppUTestExt', src='include/CppUTestExt');
+
+        self.copy("*.a", dst="lib/", src="src/CppUTestExt/")
+        self.copy("*.a", dst="lib/", src="src/CppUTest/")
 
     def package_info(self):
         self.cpp_info.libs = ["CppUTest", "CppUTestExt"]
