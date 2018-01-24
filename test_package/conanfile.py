@@ -8,7 +8,7 @@ username = os.getenv("CONAN_USERNAME", "geotrac")
 
 class CpputestTestConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    requires = "cpputest/3.5-togs1@%s/%s" % (username, channel)
+    requires = "cpputest/3.8-togs1@%s/%s" % (username, channel)
     generators = "cmake"
 
     def build(self):
