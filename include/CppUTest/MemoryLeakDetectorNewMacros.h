@@ -21,30 +21,45 @@
 
 #include "CppUTestConfig.h"
 
-#if CPPUTEST_USE_MEM_LEAK_DETECTION
+/* Make sure that mem leak detection is on and that this is being included from a C++ file */
+#if CPPUTEST_USE_MEM_LEAK_DETECTION && defined(__cplusplus)
 
 /* This #ifndef prevents <new> from being included twice and enables the file to be included anywhere */
 #ifndef CPPUTEST_USE_NEW_MACROS
 
-	#if CPPUTEST_USE_STD_CPP_LIB
-		#include <new>
-		#include <memory>
-		#include <string>
-	#endif
+    #if CPPUTEST_USE_STD_CPP_LIB
+        #include <new>
+        #include <memory>
+        #include <string>
+    #endif
 
-	void* operator new(size_t size, const char* file, int line) UT_THROW (std::bad_alloc);
-	void* operator new[](size_t size, const char* file, int line) UT_THROW (std::bad_alloc);
-	void* operator new(size_t size) UT_THROW(std::bad_alloc);
-	void* operator new[](size_t size) UT_THROW(std::bad_alloc);
+    void* operator new(size_t size, const char* file, int line) UT_THROW (std::bad_alloc);
+    void* operator new[](size_t size, const char* file, int line) UT_THROW (std::bad_alloc);
+    void* operator new(size_t size) UT_THROW(std::bad_alloc);
+    void* operator new[](size_t size) UT_THROW(std::bad_alloc);
 
-    void operator delete(void* mem) UT_NOTHROW;
-    void operator delete[](void* mem) UT_NOTHROW;
     void operator delete(void* mem, const char* file, int line) UT_NOTHROW;
     void operator delete[](void* mem, const char* file, int line) UT_NOTHROW;
+    void operator delete(void* mem) UT_NOTHROW;
+    void operator delete[](void* mem) UT_NOTHROW;
+    void operator delete (void* mem, size_t size) UT_NOTHROW;
+    void operator delete[] (void* mem, size_t size) UT_NOTHROW;
 
 #endif
 
+
+#ifdef __clang__
+ #pragma clang diagnostic push
+ #if __clang_major__ >= 3 && __clang_minor__ >= 6
+  #pragma clang diagnostic ignored "-Wkeyword-macro"
+ #endif
+#endif
+
 #define new new(__FILE__, __LINE__)
+
+#ifdef __clang__
+ #pragma clang diagnostic pop
+#endif
 
 #define CPPUTEST_USE_NEW_MACROS 1
 

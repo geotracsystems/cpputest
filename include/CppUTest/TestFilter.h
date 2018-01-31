@@ -34,21 +34,27 @@ class TestFilter
 {
 public:
 
-	TestFilter();
-	TestFilter(const char* filter);
-	TestFilter(const SimpleString& filter);
+    TestFilter();
+    TestFilter(const char* filter);
+    TestFilter(const SimpleString& filter);
 
-	bool match(const SimpleString& name) const;
+    TestFilter* add(TestFilter* filter);
+    TestFilter* getNext() const;
 
-	void strictMatching();
+    bool match(const SimpleString& name) const;
 
-	bool operator==(const TestFilter& filter) const;
-	bool operator!=(const TestFilter& filter) const;
+    void strictMatching();
+    void invertMatching();
 
-	SimpleString asString() const;
+    bool operator==(const TestFilter& filter) const;
+    bool operator!=(const TestFilter& filter) const;
+
+    SimpleString asString() const;
 private:
-	SimpleString filter_;
-	bool strictMatching_;
+    SimpleString filter_;
+    bool strictMatching_;
+    bool invertMatching_;
+    TestFilter* next_;
 };
 
 SimpleString StringFrom(const TestFilter& filter);
