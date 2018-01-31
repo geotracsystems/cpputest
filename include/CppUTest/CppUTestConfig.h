@@ -25,12 +25,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #ifndef CPPUTESTCONFIG_H_
 #define CPPUTESTCONFIG_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
+#ifndef CPPUTEST_USE_OWN_CONFIGURATION
+#include "CppUTestGeneratedConfig.h"
 #endif
 
 /*
@@ -40,6 +39,13 @@
  * from other files and resolve dependencies in #includes.
  *
  */
+
+#ifdef __clang__
+ #pragma clang diagnostic push
+ #if __clang_major__ >= 3 && __clang_minor__ >= 6
+  #pragma clang diagnostic ignored "-Wreserved-id-macro"
+ #endif
+#endif
 
 /*
  * Lib C dependencies that are currently still left:
@@ -85,6 +91,9 @@
  #endif
 #endif
 
+/* Should be the only #include here. Standard C library wrappers */
+#include "StandardCLibrary.h"
+
 /* Create a __no_return__ macro, which is used to flag a function as not returning.
  * Used for functions that always throws for instance.
  *
@@ -111,21 +120,36 @@
  */
 
 #if CPPUTEST_USE_STD_CPP_LIB
-#define UT_THROW(exception) throw (exception)
-#define UT_NOTHROW throw()
+  #if defined(__cplusplus) && __cplusplus >= 201103L
+    #define UT_THROW(exception)
+    #define UT_NOTHROW noexcept
+  #else
+    #define UT_THROW(exception) throw (exception)
+    #define UT_NOTHROW throw()
+  #endif
 #else
-#define UT_THROW(exception)
-#define UT_NOTHROW
+  #define UT_THROW(exception)
+  #ifdef __clang__
+    #define UT_NOTHROW throw()
+  #else
+    #define UT_NOTHROW
+  #endif
 #endif
 
 /*
- * CLang's operator delete requires an NOTHROW block. For now, when we use CLang, then have an empty exception specifier.
- * However, this ought to be done inside the configure.ac in the future.
+ * Visual C++ doesn't define __cplusplus as C++11 yet (201103), however it doesn't want the throw(exception) either, but
+ * it does want throw().
  */
 
-#ifdef __clang__
-#undef UT_NOTHROW
-#define UT_NOTHROW throw()
+#ifdef _MSC_VER
+  #undef UT_THROW
+  #define UT_THROW(exception)
+#endif
+
+#if defined(__cplusplus) && __cplusplus >= 201103L
+    #define DEFAULT_COPY_CONSTRUCTOR(classname) classname(const classname &) = default;
+#else
+    #define DEFAULT_COPY_CONSTRUCTOR(classname)
 #endif
 
 /*
@@ -144,6 +168,20 @@
 #endif
 
 /*
+ * Handling of IEEE754 floating point exceptions via fenv.h
+ * Works on non-Visual C++ compilers and Visual C++ 2008 and newer
+ */
+
+#if CPPUTEST_USE_STD_C_LIB && (!defined(_MSC_VER) || (_MSC_VER >= 1800))
+#define CPPUTEST_HAVE_FENV
+#if defined(__WATCOMC__)
+#define CPPUTEST_FENV_IS_WORKING_PROPERLY 0
+#else
+#define CPPUTEST_FENV_IS_WORKING_PROPERLY 1
+#endif
+#endif
+
+/*
  * Detection of different 64 bit environments
  */
 
@@ -154,7 +192,80 @@
 #endif
 #endif
 
-/* Should be the only #include here. Standard C library wrappers */
-#include "StandardCLibrary.h"
+/* Handling of systems with a different byte-width (e.g. 16 bit).
+ * Since CHAR_BIT is defined in limits.h (ANSI C), use default of 8 when building without Std C library.
+ */
+#if CPPUTEST_USE_STD_C_LIB
+#define CPPUTEST_CHAR_BIT CHAR_BIT
+#else
+#define CPPUTEST_CHAR_BIT 8
+#endif
+
+/*
+ * Support for "long long" type.
+ *
+ * Not supported when CPUTEST_LONG_LONG_DISABLED is set.
+ * Can be overridden by using CPPUTEST_USE_LONG_LONG
+ *
+ * CPPUTEST_HAVE_LONG_LONG_INT is set by configure
+ * LLONG_MAX is set in limits.h. This is a crude attempt to detect long long support when no configure is used
+ *
+ */
+
+#if !defined(CPPUTEST_LONG_LONG_DISABLED) && !defined(CPPUTEST_USE_LONG_LONG)
+#if defined(CPPUTEST_HAVE_LONG_LONG_INT) || defined(LLONG_MAX)
+#define CPPUTEST_USE_LONG_LONG 1
+#endif
+#endif
+
+#ifdef CPPUTEST_USE_LONG_LONG
+typedef long long cpputest_longlong;
+typedef unsigned long long cpputest_ulonglong;
+#else
+/* Define some placeholders to disable the overloaded methods.
+ * It's not required to have these match the size of the "real" type, but it's occasionally convenient.
+ */
+
+#if defined(CPPUTEST_64BIT) && !defined(CPPUTEST_64BIT_32BIT_LONGS)
+#define CPPUTEST_SIZE_OF_FAKE_LONG_LONG_TYPE 16
+#else
+#define CPPUTEST_SIZE_OF_FAKE_LONG_LONG_TYPE 8
+#endif
+
+struct cpputest_longlong
+{
+#if defined(__cplusplus)
+  cpputest_longlong() {}
+  cpputest_longlong(int) {}
+#endif
+  char dummy[CPPUTEST_SIZE_OF_FAKE_LONG_LONG_TYPE];
+};
+
+struct cpputest_ulonglong
+{
+#if defined(__cplusplus)
+  cpputest_ulonglong() {}
+  cpputest_ulonglong(int) {}
+#endif
+  char dummy[CPPUTEST_SIZE_OF_FAKE_LONG_LONG_TYPE];
+};
+
+#endif
+
+/* Visual C++ 10.0+ (2010+) supports the override keyword, but doesn't define the C++ version as C++11 */
+#if defined(__cplusplus) && ((__cplusplus >= 201103L) || (defined(_MSC_VER) && (_MSC_VER >= 1600)))
+#define CPPUTEST_COMPILER_FULLY_SUPPORTS_CXX11
+#define _override override
+#else
+#define _override
+#endif
+
+/* MinGW-w64 prefers to act like Visual C++, but we want the ANSI behaviors instead */
+#undef __USE_MINGW_ANSI_STDIO
+#define __USE_MINGW_ANSI_STDIO 1
+
+#ifdef __clang__
+ #pragma clang diagnostic pop
+#endif
 
 #endif

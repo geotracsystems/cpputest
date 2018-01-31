@@ -1,35 +1,38 @@
 enable_testing()
 
 set(CppUTestTests_src
-        AllTests.cpp
-        SetPluginTest.cpp
-        CheatSheetTest.cpp
-        SimpleStringTest.cpp
-        CommandLineArgumentsTest.cpp
-        TestFailureTest.cpp
-        TestFailureNaNTest.cpp
-        CommandLineTestRunnerTest.cpp
-        TestFilterTest.cpp
-        TestHarness_cTest.cpp
-        JUnitOutputTest.cpp
-        TestHarness_cTestCFile.c
-        MemoryLeakDetectorTest.cpp
-        TestInstallerTest.cpp
-        AllocLetTestFree.c
-        MemoryLeakOperatorOverloadsTest.cpp
-        TestMemoryAllocatorTest.cpp
-        MemoryLeakWarningTest.cpp
-        TestOutputTest.cpp
-        AllocLetTestFreeTest.cpp
-        NullTestTest.cpp
-        TestRegistryTest.cpp
-        AllocationInCFile.c
-        PluginTest.cpp
-        TestResultTest.cpp
-        PreprocessorTest.cpp
-        TestUTestMacro.cpp
-        AllocationInCppFile.cpp
-        UtestTest.cpp
+    AllTests.cpp
+    SetPluginTest.cpp
+    CheatSheetTest.cpp
+    SimpleStringTest.cpp
+    CommandLineArgumentsTest.cpp
+    TestFailureTest.cpp
+    TestFailureNaNTest.cpp
+    CommandLineTestRunnerTest.cpp
+    TestFilterTest.cpp
+    TestHarness_cTest.cpp
+    JUnitOutputTest.cpp
+    TestHarness_cTestCFile.c
+    MemoryLeakDetectorTest.cpp
+    TestInstallerTest.cpp
+    AllocLetTestFree.c
+    MemoryOperatorOverloadTest.cpp
+    TestMemoryAllocatorTest.cpp
+    MemoryLeakWarningTest.cpp
+    TestOutputTest.cpp
+    AllocLetTestFreeTest.cpp
+    TestRegistryTest.cpp
+    AllocationInCFile.c
+    PluginTest.cpp
+    TestResultTest.cpp
+    PreprocessorTest.cpp
+    TestUTestMacro.cpp
+    TestUTestStringMacro.cpp
+    AllocationInCppFile.cpp
+    UtestTest.cpp
+    SimpleMutexTest.cpp
+    UtestPlatformTest.cpp
+    TeamCityOutputTest.cpp
 )
 
 if (MSVC)
@@ -37,10 +40,20 @@ if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4723")
 endif (MSVC)
 
-add_executable(CppUTestTests ${CppUTestTests_src})
-target_link_libraries(CppUTestTests CppUTest)
-add_test(CppUTestTests CppUTestTests)
+if (MINGW)
+    find_package (Threads REQUIRED)
+    set(THREAD_LIB "pthread")
+endif (MINGW)
 
-if (TESTS)
-    add_subdirectory(CppUTestExt)
-endif (TESTS)
+if (${CMAKE_HOST_SYSTEM_NAME} MATCHES "OpenBSD")
+   set (THREADS_HAVE_PTHREAD_ARG 1)
+   find_package (Threads REQUIRED)
+   set (THREAD_LIB "pthread")
+endif ()
+
+add_executable(CppUTestTests ${CppUTestTests_src})
+cpputest_normalize_test_output_location(CppUTestTests)
+target_link_libraries(CppUTestTests CppUTest ${THREAD_LIB})
+
+add_subdirectory(CppUTestExt)
+cpputest_buildtime_discover_tests(CppUTestTests)

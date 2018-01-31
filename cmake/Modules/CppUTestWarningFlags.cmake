@@ -16,12 +16,16 @@ else (MSVC)
 
     macro(check_and_append_cxx_warning_flags)
       foreach (flag ${ARGN})
-        check_cxx_compiler_flag("-${flag}" WARNING_CXX_FLAG_${flag})
-        if (WARNING_CXX_FLAG_${flag})
+        check_cxx_compiler_flag("-${flag}" WARNING_CXX_FLAG_TO_CHECK)
+        if (WARNING_CXX_FLAG_TO_CHECK)
             set(CPPUTEST_CXX_WARNING_FLAGS "${CPPUTEST_CXX_WARNING_FLAGS} -${flag}")
-        endif (WARNING_CXX_FLAG_${flag})
+          endif (WARNING_CXX_FLAG_TO_CHECK)
       endforeach (flag)
     endmacro(check_and_append_cxx_warning_flags)
+
+    if (NOT GMOCK AND NOT REAL_GTEST)
+      list(APPEND WARNING_C_FLAGS Werror pedantic-errors)
+    endif (NOT GMOCK AND NOT REAL_GTEST)
 
     set(WARNING_C_FLAGS
         Weverything
@@ -34,11 +38,10 @@ else (MSVC)
         Wsign-conversion
         Wno-padded
         Wno-disabled-macro-expansion
+        Wno-reserved-id-macro
+        Wno-keyword-macro
+        Wno-long-long
         )
-
-    if (NOT GMOCK AND NOT REAL_GTEST)
-      list(APPEND WARNING_C_FLAGS Werror pedantic-errors)
-    endif (NOT GMOCK AND NOT REAL_GTEST)
 
     set(WARNING_C_ONLY_FLAGS
         Wstrict-prototypes
@@ -50,8 +53,16 @@ else (MSVC)
         Wno-global-constructors
         Wno-exit-time-destructors
         Wno-weak-vtables
+        Wno-old-style-cast
         )
 
+    if (C++11)
+        set(WARNING_CXX_FLAGS
+           ${WARNING_CXX_FLAGS}
+           Wno-c++98-compat
+           Wno-c++98-compat-pedantic
+           )
+    endif (C++11)
 
     check_and_append_c_warning_flags(${WARNING_C_FLAGS})
     check_and_append_c_warning_flags(${WARNING_C_ONLY_FLAGS})
